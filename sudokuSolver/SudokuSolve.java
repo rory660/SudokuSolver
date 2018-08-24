@@ -3,6 +3,8 @@ package sudokuSolver;
 import java.util.Arrays;
 import sudokuSolver.Sudoku;
 
+import sudokuSolver.SudokuInterface;
+
 public class SudokuSolve{
 	private Sudoku sudoku;
 	private boolean[][][] possibilities;
@@ -35,7 +37,66 @@ public class SudokuSolve{
 			changing = changing || this.solveCellsIfPossible();
 			// changing = changing || this.applyInlineWithinCellTrick();
 		}
-		return this.sudoku;
+		return this.finishSolveBruteForce(sudoku);
+	}
+
+	private Sudoku finishSolveBruteForce(Sudoku sudoku){
+		this.sudoku = sudoku;
+		Sudoku initialSudoku = new Sudoku(sudoku);
+		boolean[][][] initialPossibilities = new boolean[9][9][9];
+		for(int x = 0; x < 9; x ++){
+			for(int y = 0; y < 9; y ++){
+				for(int digit = 0; digit < 9; digit ++){
+					initialPossibilities[x][y][digit] = this.possibilities[x][y][digit];
+				}
+			}
+		}
+		for(int x = 0; x < 9; x++){
+			for(int y = 0; y < 9; y++){
+				if(sudoku.getDigit(x, y) == -1){
+					for(int digit = 1; digit < 10; digit++){
+						if(this.possibilities[x][y][digit - 1]){
+							sudoku.setDigit(x, y, digit);
+							boolean changing = true;
+							while(changing){
+								changing = false;
+								for(int y2 = 0; y2 < 9; y2++){
+									for(int x2 = 0; x2 < 9; x2++){
+										if(this.sudoku.getDigit(x2,y2) == -1){
+											if(this.solveDigitIfPossible(x2,y2)){
+												changing = true;
+											}
+										}
+									}
+								}
+								changing = changing || this.solveRowsIfPossible();
+								changing = changing || this.solveColumnsIfPossible();
+								changing = changing || this.solveCellsIfPossible();
+							}
+							
+							if(!sudoku.isFilled()){
+								sudoku = finishSolveBruteForce(sudoku);
+							}
+							if(sudoku.isSolved()){
+								return sudoku;
+							}
+							else{
+								sudoku = new Sudoku(initialSudoku);
+								for(int x1 = 0; x1 < 9; x1 ++){
+									for(int y1 = 0; y1 < 9; y1 ++){
+										for(int digit1 = 0; digit1 < 9; digit1 ++){
+											this.possibilities[x1][y1][digit1] = initialPossibilities[x1][y1][digit1];
+										}
+									}
+								}
+							}
+						}
+					}
+					return sudoku;
+				}
+			}
+		}
+		return sudoku;
 	}
 
 	private boolean solveDigitIfPossible(int x,int y){
@@ -290,5 +351,4 @@ public class SudokuSolve{
 		}
 		return array1;
 	}
-	
 }
